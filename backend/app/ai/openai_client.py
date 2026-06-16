@@ -97,16 +97,15 @@ class OpenAIService:
         return (response.choices[0].message.content or "").strip()
 
     def _mock_embedding(self, text: str) -> list[float]:
-        seed = text.encode("utf-8", errors="ignore") or b"demo"
-        values: list[float] = []
-        counter = 0
+        tokens = re.findall(r"[a-zA-ZÀ-ÿ0-9]+", text.lower())
+        vector = [0.0] * settings.embedding_dimensions
 
-        while len(values) < settings.embedding_dimensions:
-            digest = hashlib.sha256(seed + counter.to_bytes(4, "big")).digest()
-            values.extend((byte / 127.5) - 1.0 for byte in digest)
-            counter += 1
+        for token in tokens or ["demo"]:
+            digest = hashlib.sha256(token.encode("utf-8", errors="ignore")).digest()
+            index = int.from_bytes(digest[:4], "big") % settings.embedding_dimensions
+            sign = 1.0 if digest[4] % 2 == 0 else -1.0
+            vector[index] += sign
 
-        vector = values[: settings.embedding_dimensions]
         norm = math.sqrt(sum(value * value for value in vector)) or 1.0
         return [value / norm for value in vector]
 

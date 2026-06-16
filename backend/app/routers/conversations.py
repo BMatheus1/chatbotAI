@@ -32,3 +32,25 @@ def get_conversation(conversation_id: UUID, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversa nao encontrada.")
     return conversation
 
+
+@router.delete("")
+def delete_all_conversations(db: Session = Depends(get_db)) -> dict[str, str | int]:
+    repository = ConversationRepository(db)
+    deleted_count = repository.delete_all()
+    db.commit()
+    return {
+        "message": "Historico de conversas removido com sucesso.",
+        "deleted_count": deleted_count,
+    }
+
+
+@router.delete("/{conversation_id}")
+def delete_conversation(conversation_id: UUID, db: Session = Depends(get_db)) -> dict[str, str]:
+    repository = ConversationRepository(db)
+    conversation = repository.get(conversation_id)
+    if not conversation:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversa nao encontrada.")
+
+    repository.delete(conversation)
+    db.commit()
+    return {"message": "Conversa removida com sucesso."}

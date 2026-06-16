@@ -8,6 +8,7 @@ Foi pensado como projeto de portfolio: arquitetura clara, codigo modular, Docker
 
 - `AI_PROVIDER=mock`: modo demo gratuito. Nao exige chave OpenAI e permite testar upload, indexacao, busca vetorial, historico e chat.
 - `AI_PROVIDER=openai`: modo real. Usa OpenAI API para embeddings, respostas naturais e OCR visual de PDFs escaneados.
+- `AI_PROVIDER=gemini`: modo com Gemini API para gerar respostas finais e OCR visual de PDFs escaneados.
 
 ## Funcionalidades
 
@@ -15,7 +16,7 @@ Foi pensado como projeto de portfolio: arquitetura clara, codigo modular, Docker
 - Upload de PDFs para FAQs, catalogos, procedimentos, politicas e tabelas de preco.
 - Indexacao de documentos com chunking, embeddings e armazenamento vetorial.
 - RAG com busca semantica em pgvector antes da resposta.
-- Fallback de OCR para PDFs escaneados no modo OpenAI.
+- Fallback de OCR para PDFs escaneados nos modos Gemini e OpenAI.
 - OCR demonstrativo no modo mock para permitir testes sem custo.
 - Historico de conversas com mensagens, contexto, fontes e timestamps.
 - Painel administrativo para documentos, chunks e conversas.
@@ -29,7 +30,7 @@ Foi pensado como projeto de portfolio: arquitetura clara, codigo modular, Docker
 | Backend | FastAPI, Python, SQLAlchemy |
 | Banco | PostgreSQL |
 | Vetores | pgvector |
-| IA | Provider mock no demo; OpenAI API em producao |
+| IA | Provider mock no demo; Gemini API ou OpenAI API em producao |
 | Infra | Docker, docker-compose |
 
 ## Arquitetura
@@ -59,13 +60,14 @@ AI Business Assistant
 1. O administrador envia um PDF no painel.
 2. O backend salva o arquivo em `backend/uploads`.
 3. O texto e extraido com `pypdf`.
-4. Se o PDF nao tiver texto selecionavel, o modo OpenAI usa OCR visual. O modo mock cria conteudo demonstrativo por pagina.
+4. Se o PDF nao tiver texto selecionavel, os modos Gemini/OpenAI usam OCR visual. O modo mock cria conteudo demonstrativo por pagina.
 5. O conteudo e dividido em chunks com sobreposicao.
-6. O provider configurado gera embeddings: OpenAI em producao ou vetores deterministicos locais no demo.
+6. O provider configurado gera embeddings: OpenAI em producao ou vetores deterministicos locais no demo/Gemini.
 7. Os chunks e vetores sao armazenados no PostgreSQL usando pgvector.
 8. A pergunta do usuario tambem vira embedding.
 9. O backend busca os chunks semanticamente mais proximos.
 10. A resposta usa o contexto recuperado e a memoria recente da conversa.
+11. Se `AI_PROVIDER=gemini`, o Gemini gera a resposta final com base no contexto recuperado.
 
 ## Instalacao
 
@@ -85,6 +87,51 @@ Para usar OpenAI real:
 ```env
 AI_PROVIDER=openai
 OPENAI_API_KEY=sk-proj-sua-chave
+```
+
+Para usar Gemini API:
+
+```env
+AI_PROVIDER=gemini
+GEMINI_API_KEY=sua_chave_gemini
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+## Integracao com Gemini API
+
+O projeto pode usar Gemini API para gerar as respostas finais do chatbot e extrair texto visual de PDFs escaneados ou catalogos em imagem. A busca RAG, o chunking, o historico e o pgvector continuam preservados.
+
+### Configurando a Gemini API
+
+1. Acesse o Google AI Studio.
+2. Gere uma API Key.
+3. Crie ou edite o arquivo `.env` na raiz do projeto.
+4. Adicione:
+
+```env
+AI_PROVIDER=gemini
+GEMINI_API_KEY=sua_chave_aqui
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+Nunca envie seu `.env` para o GitHub. O arquivo ja esta protegido pelo `.gitignore`.
+
+### Testando a integracao
+
+Com o backend rodando, acesse:
+
+```text
+http://localhost:8000/api/health/ai
+```
+
+Resposta esperada:
+
+```json
+{
+  "provider": "gemini",
+  "model": "gemini-2.5-flash",
+  "configured": true
+}
 ```
 
 ## Rodando com Docker
@@ -126,8 +173,10 @@ npm run dev
 
 | Variavel | Descricao | Exemplo |
 | --- | --- | --- |
-| `AI_PROVIDER` | Provider de IA: `mock` ou `openai` | `mock` |
+| `AI_PROVIDER` | Provider de IA: `mock`, `gemini` ou `openai` | `mock` |
 | `OPENAI_API_KEY` | Chave da OpenAI API quando `AI_PROVIDER=openai` | `sk-proj-...` |
+| `GEMINI_API_KEY` | Chave da Gemini API quando `AI_PROVIDER=gemini` | `sua-chave` |
+| `GEMINI_MODEL` | Modelo usado na Gemini API | `gemini-2.5-flash` |
 | `DATABASE_URL` | URL SQLAlchemy do PostgreSQL | `postgresql+psycopg://postgres:postgres@postgres:5432/ai_business_assistant` |
 | `FRONTEND_URL` | Origem liberada no CORS | `http://localhost:3000` |
 | `CHAT_MODEL` | Modelo usado para resposta real | `gpt-4.1-mini` |
@@ -154,6 +203,7 @@ No modo demo, as respostas indicam que sao simuladas. Isso permite que recrutado
 | Metodo | Rota | Descricao |
 | --- | --- | --- |
 | `GET` | `/api/health` | Health check |
+| `GET` | `/api/health/ai` | Verifica configuracao da Gemini API |
 | `POST` | `/api/chat` | Envia mensagem e recebe resposta RAG |
 | `GET` | `/api/documents` | Lista documentos indexados |
 | `POST` | `/api/documents/upload` | Envia e indexa PDF |

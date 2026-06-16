@@ -6,6 +6,7 @@ psycopg[binary]==3.2.3
 pgvector==0.3.6
 pydantic-settings==2.7.1
 openai==1.59.7
+google-genai
 pypdf==5.1.0
 pymupdf==1.25.1
 tenacity==9.0.0

@@ -64,9 +64,13 @@ export function AdminDashboard() {
         <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
           <div className="space-y-6">
             <DocumentUploader onUploaded={() => void refreshData()} />
-            <DocumentList documents={documents} isLoading={isLoading} />
+            <DocumentList documents={documents} isLoading={isLoading} onDeleted={() => void refreshData()} />
           </div>
-          <ConversationList conversations={conversations} isLoading={isLoading} />
+          <ConversationList
+            conversations={conversations}
+            isLoading={isLoading}
+            onCleared={() => void refreshData()}
+          />
         </div>
       </section>
     </AppShell>

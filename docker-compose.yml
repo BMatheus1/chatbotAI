@@ -1,7 +1,7 @@
 services:
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: ai-business-postgres
+    container_name: chatbotai-postgres
     environment:
       POSTGRES_DB: ai_business_assistant
       POSTGRES_USER: postgres
@@ -19,12 +19,14 @@ services:
   backend:
     build:
       context: ./backend
-    container_name: ai-business-backend
+    container_name: chatbotai-backend
     environment:
       DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/ai_business_assistant
       FRONTEND_URL: http://localhost:3000
       AI_PROVIDER: ${AI_PROVIDER:-mock}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
       CHAT_MODEL: ${CHAT_MODEL:-gpt-4.1-mini}
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
       EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-1536}
@@ -42,7 +44,7 @@ services:
   frontend:
     build:
       context: ./frontend
-    container_name: ai-business-frontend
+    container_name: chatbotai-frontend
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8000/api
     ports:

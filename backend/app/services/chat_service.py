@@ -2,6 +2,7 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from app.ai.gemini_client import gemini_service
 from app.ai.openai_client import openai_service
 from app.ai.prompts import SYSTEM_PROMPT, build_rag_context
 from app.core.config import settings
@@ -24,10 +25,17 @@ class ChatService:
         retrieved_chunks = [chunk for chunk, _distance in retrieved_results]
         memory = conversations.recent_messages(conversation.id, settings.conversation_memory_limit)
 
-        answer = openai_service.generate_answer(
-            instructions=SYSTEM_PROMPT,
-            input_text=self._build_model_input(message, retrieved_chunks, memory),
-        )
+        if settings.ai_provider.lower() == "gemini":
+            answer = gemini_service.generate_answer(
+                message=message,
+                context_chunks=[chunk.content for chunk in retrieved_chunks],
+                history=[(item.role, item.content) for item in memory],
+            )
+        else:
+            answer = openai_service.generate_answer(
+                instructions=SYSTEM_PROMPT,
+                input_text=self._build_model_input(message, retrieved_chunks, memory),
+            )
 
         source_metadata = [
             self._source_payload(chunk, distance) for chunk, distance in retrieved_results
@@ -84,7 +92,7 @@ Mensagem atual do cliente:
 
     def _source_payload(self, chunk: DocumentChunk, distance: float) -> dict:
         return {
-            "document_id": chunk.document_id,
+            "document_id": str(chunk.document_id),
             "filename": chunk.document.original_filename if chunk.document else "Documento",
             "page_number": chunk.page_number,
             "content": chunk.content[:500],

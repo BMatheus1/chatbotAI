@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useRef, useState } from "react";
-import { FileText, Loader2, Send, Sparkles } from "lucide-react";
+import { FileText, Loader2, RotateCcw, Send, Sparkles } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { ChatMessage } from "@/components/chat/chat-message";
@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { sendChatMessage } from "@/lib/api";
+import { deleteConversation, sendChatMessage } from "@/lib/api";
 import type { ChatMessage as ChatMessageType, Source } from "@/lib/types";
 
 const suggestions = [
@@ -18,15 +18,15 @@ const suggestions = [
   "Como funciona o agendamento?"
 ];
 
+const welcomeMessage: ChatMessageType = {
+  id: "welcome",
+  role: "assistant",
+  content:
+    "Ola! Sou o assistente virtual da empresa. Posso responder com base nos documentos cadastrados no painel administrativo."
+};
+
 export function ChatPanel() {
-  const [messages, setMessages] = useState<ChatMessageType[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      content:
-        "Ola! Sou o assistente virtual da empresa. Posso responder com base nos documentos cadastrados no painel administrativo."
-    }
-  ]);
+  const [messages, setMessages] = useState<ChatMessageType[]>([welcomeMessage]);
   const [conversationId, setConversationId] = useState<string>();
   const [input, setInput] = useState("");
   const [sources, setSources] = useState<Source[]>([]);
@@ -71,6 +71,24 @@ export function ChatPanel() {
     textareaRef.current?.focus();
   }
 
+  async function handleClearConversation() {
+    const activeConversationId = conversationId;
+
+    setError(null);
+    setInput("");
+    setSources([]);
+    setConversationId(undefined);
+    setMessages([{ ...welcomeMessage, id: crypto.randomUUID() }]);
+
+    if (!activeConversationId) return;
+
+    try {
+      await deleteConversation(activeConversationId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Nao foi possivel limpar a conversa.");
+    }
+  }
+
   return (
     <AppShell>
       <section className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[1fr_340px]">
@@ -80,10 +98,22 @@ export function ChatPanel() {
               <h1 className="text-lg font-semibold">Atendimento IA</h1>
               <p className="text-sm text-muted-foreground">Chat com RAG, memoria curta e fontes documentais.</p>
             </div>
-            <Badge>
-              <Sparkles className="mr-1 h-3 w-3" />
-              Online
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void handleClearConversation()}
+                disabled={isLoading}
+              >
+                <RotateCcw className="h-4 w-4" />
+                Limpar
+              </Button>
+              <Badge>
+                <Sparkles className="mr-1 h-3 w-3" />
+                Online
+              </Badge>
+            </div>
           </div>
 
           <div className="flex-1 space-y-5 overflow-y-auto px-5 py-6">
@@ -171,4 +201,3 @@ export function ChatPanel() {
     </AppShell>
   );
 }
-

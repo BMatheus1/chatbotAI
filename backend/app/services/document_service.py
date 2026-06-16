@@ -5,6 +5,7 @@ from pathlib import Path
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
+from app.ai.gemini_client import gemini_service
 from app.ai.openai_client import openai_service
 from app.core.config import settings
 from app.models.document import Document, DocumentChunk
@@ -46,6 +47,12 @@ class DocumentService:
 
         embeddings = openai_service.embed_texts([payload[2] for payload in chunk_payloads])
         repository = DocumentRepository(db)
+        old_documents = repository.get_by_original_filename(file.filename or safe_name)
+        old_paths = [Path(document.storage_path) for document in old_documents]
+
+        for old_document in old_documents:
+            repository.delete(old_document)
+
         document = repository.create(
             Document(
                 filename=safe_name,
@@ -70,17 +77,43 @@ class DocumentService:
         ]
         repository.add_chunks(chunks)
         db.commit()
+
+        for old_path in old_paths:
+            old_path.unlink(missing_ok=True)
+
         db.refresh(document)
         return document
 
     def list_documents(self, db: Session) -> list[Document]:
         return DocumentRepository(db).list_all()
 
+    def delete_document(self, db: Session, document_id: uuid.UUID) -> None:
+        repository = DocumentRepository(db)
+        document = repository.get(document_id)
+        if not document:
+            raise ValueError("Documento nao encontrado.")
+
+        storage_path = Path(document.storage_path)
+        repository.delete(document)
+        db.commit()
+        storage_path.unlink(missing_ok=True)
+
     def _needs_ocr(self, pages: list[tuple[int, str]]) -> bool:
         return sum(len(text.strip()) for _, text in pages) < 200
 
     def _extract_pages_with_ocr(self, storage_path: Path, filename: str) -> list[tuple[int, str]]:
         extracted_pages: list[tuple[int, str]] = []
+
+        ai_provider = settings.ai_provider.lower()
+
+        if ai_provider == "gemini":
+            for page_number, image_bytes in pdf_service.render_page_images(storage_path):
+                text = gemini_service.extract_text_from_image(image_bytes, page_number)
+                cleaned_text = " ".join(text.split())
+                if cleaned_text:
+                    extracted_pages.append((page_number, cleaned_text))
+
+            return extracted_pages
 
         if not openai_service.uses_openai:
             page_count = pdf_service.count_pages(storage_path)

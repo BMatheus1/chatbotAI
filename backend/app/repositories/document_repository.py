@@ -26,6 +26,14 @@ class DocumentRepository:
     def get(self, document_id: UUID) -> Document | None:
         return self.db.get(Document, document_id)
 
+    def get_by_original_filename(self, original_filename: str) -> list[Document]:
+        statement = select(Document).where(Document.original_filename == original_filename)
+        return list(self.db.scalars(statement))
+
+    def delete(self, document: Document) -> None:
+        self.db.delete(document)
+        self.db.flush()
+
     def semantic_search(self, embedding: list[float], limit: int) -> list[tuple[DocumentChunk, float]]:
         distance = DocumentChunk.embedding.cosine_distance(embedding)
         statement = (

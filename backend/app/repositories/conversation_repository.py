@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models.conversation import Conversation, Message
@@ -23,6 +23,16 @@ class ConversationRepository:
             .options(selectinload(Conversation.messages))
         )
         return self.db.scalar(statement)
+
+    def delete(self, conversation: Conversation) -> None:
+        self.db.delete(conversation)
+        self.db.flush()
+
+    def delete_all(self) -> int:
+        count = len(self.list_summaries())
+        self.db.execute(delete(Conversation))
+        self.db.flush()
+        return count
 
     def add_message(
         self,
@@ -63,4 +73,3 @@ class ConversationRepository:
             .order_by(Conversation.updated_at.desc())
         )
         return [(conversation, count) for conversation, count in self.db.execute(statement).all()]
-

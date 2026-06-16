@@ -18,7 +18,7 @@ def send_message(payload: ChatRequest, db: Session = Depends(get_db)) -> dict:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=(
-                "Falha ao gerar resposta. Verifique se OPENAI_API_KEY e uma chave valida "
-                "e se a conta possui creditos."
+                "Falha ao gerar resposta. Verifique se o provider de IA esta configurado "
+                "e se a chave possui permissao/creditos."
             ),
         ) from exc

@@ -17,6 +17,8 @@ class Settings(BaseSettings):
 
     openai_api_key: str | None = None
     ai_provider: str = "mock"
+    gemini_api_key: str | None = None
+    gemini_model: str = "gemini-2.5-flash"
     chat_model: str = "gpt-4.1-mini"
     embedding_model: str = "text-embedding-3-small"
     embedding_dimensions: int = 1536

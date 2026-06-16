@@ -39,6 +39,12 @@ export function uploadDocument(file: File) {
   });
 }
 
+export function deleteDocument(id: string) {
+  return request<{ message: string }>(`/documents/${id}`, {
+    method: "DELETE"
+  });
+}
+
 export function listConversations() {
   return request<ConversationSummary[]>("/conversations", { cache: "no-store" });
 }
@@ -47,3 +53,14 @@ export function getConversation(id: string) {
   return request<ConversationDetail>(`/conversations/${id}`, { cache: "no-store" });
 }
 
+export function deleteConversation(id: string) {
+  return request<{ message: string }>(`/conversations/${id}`, {
+    method: "DELETE"
+  });
+}
+
+export function deleteAllConversations() {
+  return request<{ message: string; deleted_count: number }>("/conversations", {
+    method: "DELETE"
+  });
+}
