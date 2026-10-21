@@ -30,6 +30,12 @@ class Settings(BaseSettings):
     enable_ocr_fallback: bool = True
     ocr_model: str = "gpt-4.1-mini"
 
+    # WhatsApp Cloud API — parâmetros ausentes mantêm o webhook desligado.
+    whatsapp_app_secret: str = ""
+    whatsapp_webhook_verify_token: str = ""
+    whatsapp_test_phone_number_id: str = ""
+    whatsapp_auto_reply_enabled: bool = False  # reservada; sem implementação de envio
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
