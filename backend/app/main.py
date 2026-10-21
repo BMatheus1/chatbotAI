@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.database import init_db
-from app.routers import chat, conversations, documents, health
+from app.routers import chat, conversations, documents, health, whatsapp
 
 
 @asynccontextmanager
@@ -29,3 +29,4 @@ app.include_router(health.router)
 app.include_router(chat.router, prefix=settings.api_prefix)
 app.include_router(documents.router, prefix=settings.api_prefix)
 app.include_router(conversations.router, prefix=settings.api_prefix)
+app.include_router(whatsapp.router, prefix=settings.api_prefix)
