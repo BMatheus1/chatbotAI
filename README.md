@@ -240,3 +240,8 @@ Projeto criado para fins educacionais, portfolio e demonstracao tecnica.
 O módulo experimental de entrada do WhatsApp agora possui validação de webhook, assinatura HMAC, detecção de eventos repetidos e testes automatizados. **Não conecta números reais e não envia mensagens.**
 
 Veja [guia de integração e avisos de coexistência](docs/whatsapp-cloud-api.md). Para manter o WhatsApp Business funcionando no celular, não faça migração convencional do número; verifique elegibilidade para o fluxo oficial de coexistência.
+
+
+## Cloudflare Worker — Webhook de teste
+
+O deploy Git na Cloudflare pode executar `npx wrangler deploy` na raiz do repositório, usando `wrangler.jsonc` e `cloudflare/worker.mjs`. O Worker **somente valida o webhook**, não envia mensagens, não ativa IA e não acessa o WhatsApp Business do celular. Leia [o guia de deploy e segurança](cloudflare/README.md) para configurar os Secrets na Cloudflare e a URL na Meta.
