@@ -22,3 +22,5 @@ jobs:
           node-version: "22"
       - name: Testes sem chamadas externas
         run: node --test cloudflare/worker.test.mjs
+      - name: Verificar deploy Wrangler sem publicar
+        run: npx --yes wrangler@4.151.3 deploy --dry-run --outdir .wrangler-check
