@@ -26,7 +26,7 @@ def init_db() -> None:
     with engine.begin() as connection:
         connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
 
-    from app.models import conversation, document  # noqa: F401
+    from app.models import conversation, document, whatsapp_event  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
 
